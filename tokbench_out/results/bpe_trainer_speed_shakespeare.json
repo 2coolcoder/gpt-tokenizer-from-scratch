@@ -1,0 +1,31 @@
+[
+ {
+  "corpus": "shakespeare",
+  "vocab_size": 512,
+  "fast_s": 0.3779119200189598,
+  "naive_s": 5.926076028961688,
+  "minbpe_s": 65.60748219804373
+ },
+ {
+  "corpus": "shakespeare",
+  "vocab_size": 1024,
+  "fast_s": 0.4446962879737839,
+  "naive_s": 16.392678844975308,
+  "minbpe_s": 175.08431741397362
+ },
+ {
+  "corpus": "shakespeare",
+  "vocab_size": 2048,
+  "fast_s": 0.4977498339721933
+ },
+ {
+  "corpus": "shakespeare",
+  "vocab_size": 4096,
+  "fast_s": 0.5420885749626905
+ },
+ {
+  "corpus": "shakespeare",
+  "vocab_size": 8192,
+  "fast_s": 0.5932411560206674
+ }
+]

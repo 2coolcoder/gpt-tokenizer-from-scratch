@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ipynb_checkpoints/
+
+# Course repo: zip + extracted copy (large; includes 50 MB+ model checkpoints)
+*.zip
+repo/
+
+# Personal notes
+plan.txt
+
+# Regenerable outputs (python -m tokbench.data / tok_suite / run_all)
+tokbench_out/data/
+tokbench_out/tokens/
+tokbench_out/tokenizers/
+tokbench_out/logs/
+
+# Kept on purpose: tokbench_out/results/ (tables + figures used by REPORT.md)
+#                  tokbench_out/runs/    (per-run JSON with learning curves, ~0.7 MB)
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
