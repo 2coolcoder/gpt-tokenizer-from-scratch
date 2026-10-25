@@ -1,0 +1,21 @@
+{
+ "mlp_ctx8": {
+  "n_params": 22097,
+  "block_size": 8,
+  "train": 1.9163438081741333,
+  "dev": 2.034248113632202,
+  "test": 2.0262327194213867,
+  "samples": [
+   "cerim",
+   "coulturs",
+   "caritah",
+   "mellie",
+   "trainel",
+   "adel",
+   "andr",
+   "samiyah",
+   "javerii",
+   "taimis"
+  ]
+ }
+}

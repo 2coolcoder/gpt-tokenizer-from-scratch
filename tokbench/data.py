@@ -20,7 +20,7 @@ import sys
 import sysconfig
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SHAKESPEARE = os.path.join(ROOT, "repo/Karpathy-Neural-Networks-Zero-to-Hero-main/data/input.txt")
+SHAKESPEARE = os.path.join(ROOT, "data", "input.txt")
 DATA_DIR = os.path.join(ROOT, "tokbench_out/data")
 SPLITS = ("train", "val", "test")
 FRACS = (0.90, 0.05, 0.05)

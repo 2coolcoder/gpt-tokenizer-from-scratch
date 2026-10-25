@@ -20,7 +20,7 @@ from collections import Counter
 import numpy as np
 
 from tokbench.data import DATA_DIR, load_docs, load_split
-from tokbench.tokenization import BPETokenizer, CharTokenizer, load_tokenizer
+from zero_to_hero.tokenizer import CharTokenizer, RegexTokenizer, load_tokenizer
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(ROOT, "tokbench_out")
@@ -51,7 +51,7 @@ def train_tokenizers():
         times[(corpus, "char")] = time.perf_counter() - t0
         for v in VOCABS:
             t0 = time.perf_counter()
-            tok = BPETokenizer().train(text, v)
+            tok = RegexTokenizer().train(text, v)
             times[(corpus, f"bpe{v}")] = time.perf_counter() - t0
             tok.save(tok_path(corpus, f"bpe{v}"))
             print(f"trained {corpus} bpe{v} in {times[(corpus, f'bpe{v}')]:.1f}s")

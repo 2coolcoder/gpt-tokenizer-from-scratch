@@ -1,6 +1,7 @@
 # Tokenizer evaluation & ablation suite
 
-Extension of Karpathy's *Neural Networks: Zero to Hero* (lecture 7 GPT + lecture 8 minBPE).
+Extension of this project's from-scratch implementation of Karpathy's *Neural Networks: Zero to Hero*
+(the lecture-7 GPT in `zero_to_hero/gpt/` and the lecture-8 BPE tokenizer in `zero_to_hero/tokenizer/`).
 **Question:** does the tokenizer that compresses a corpus best also give the best language model
 under a fixed compute budget?
 
@@ -19,8 +20,8 @@ for coarse-BPE models to overfit.
 |---|---|
 | Corpora | **English**: Tiny Shakespeare (the course corpus), 1.00 MB train. **Python**: ASCII source files from the CPython 3.12 stdlib, size-matched at 1.01 MB train. **Python-large**: 6.77 MB train, *same* val/test files (data-scale ablation). |
 | Splits | 90 / 5 / 5 on document boundaries (doc = one speech / one source file). Val is used for early stopping, test for reporting. |
-| Tokenizers | char (course), byte-level BPE with GPT-4 regex pre-split (minbpe `RegexTokenizer` semantics) at 512 / 1K / 2K / 4K / 8K, each trained on that corpus' train split; **BPE-2K trained on the *other* corpus** (domain-mismatch ablation); tiktoken GPT-2 and cl100k (compression reference only) |
-| Model | The course GPT (`gpt.py`): 6 layers, 6 heads, d=384, 256-token context, dropout 0.2, AdamW 3e-4 constant LR, batch 64. Only the vocab size changes (10.8M → 17.0M params). Per-head attention fused into QKV + `scaled_dot_product_attention` (same math), bf16 autocast. |
+| Tokenizers | char, and this project's byte-level `RegexTokenizer` (GPT-4 regex pre-split) at 512 / 1K / 2K / 4K / 8K, each trained on that corpus' train split; **BPE-2K trained on the *other* corpus** (domain-mismatch ablation); tiktoken GPT-2 and cl100k (compression reference only) |
+| Model | This project's lecture-7 GPT (`zero_to_hero/gpt/model.py`): 6 layers, 6 heads, d=384, 256-token context, dropout 0.2, AdamW 3e-4 constant LR, batch 64. Only the vocab size changes (10.8M → 17.0M params). Uses the batched-attention variant (one QKV projection + `scaled_dot_product_attention`), which is tested equal to the lecture's per-head version; bf16 autocast. |
 | Compute budget | **5.52 PFLOPs per run** = the course's original char run (5000 steps × 64 × 256). FLOPs/token = 6N + 6·L·T·d, where N counts lm_head. Larger vocabs cost more per token, so they get fewer steps (8K: 3912 steps). |
 | Metric | **Bits per byte** = Σ NLL / ln 2 / UTF-8 bytes, over the whole split with a sliding window (context 256, stride 128). Byte accounting is exact: every token is scored once, which an assert checks. bpb is comparable across tokenizers, unlike per-token loss. |
 | Runs | 3 corpora × (6–7 tokenizers) × 3 seeds = **60 LM runs** on 2× RTX 6000 Ada (~2 GPU-hours) |
@@ -138,9 +139,9 @@ python -m tokbench.run_all --gpus 0,1         # 42 LM runs (English + Python, 3 
 python -m tokbench.run_all --corpora python_large
 python -m tokbench.bench_bpe_trainer shakespeare
 python -m tokbench.analyze                    # tables.md, lm_summary.json, figures/
-python -m pytest tokbench/tests
+python -m pytest tests
 ```
 
-Code: `tokbench/` (tokenization.py, data.py, tok_suite.py, train_lm.py, run_all.py, analyze.py,
-bench_bpe_trainer.py, tests/). Raw per-run JSON, with full learning curves and samples:
+Code: `tokbench/` (data.py, tok_suite.py, train_lm.py, run_all.py, analyze.py, bench_bpe_trainer.py),
+built on `zero_to_hero/gpt/` and `zero_to_hero/tokenizer/`; tests in `tests/`. Raw per-run JSON, with full learning curves and samples:
 `tokbench_out/runs/`. All tables: `tokbench_out/results/tables.md`.

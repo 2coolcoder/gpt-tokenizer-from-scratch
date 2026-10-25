@@ -3,9 +3,9 @@ Train the course GPT (gpt.py: 6 layers, 6 heads, n_embd 384, context 256 tokens,
 AdamW lr 3e-4 constant, batch 64) on a cached token stream under a fixed training-FLOPs budget,
 and evaluate held-out bits-per-byte.
 
-The model is gpt.py's architecture with the per-head attention modules fused into one QKV
-projection + F.scaled_dot_product_attention (mathematically identical, faster), trained in
-bf16 autocast. Only the vocabulary size changes between tokenizers.
+The model is this project's lecture-7 GPT (zero_to_hero/gpt/model.py) with attn="batched": the
+per-head attention modules fused into one QKV projection + F.scaled_dot_product_attention
+(identical outputs, tests/test_gpt.py), trained in bf16 autocast. Only the vocab size changes.
 
 Compute accounting (Kaplan et al. 2020): training FLOPs/token = 6 * N + 6 * n_layer * T * C,
 where N counts every matmul parameter, including lm_head (V * C) but not the embedding lookups.
@@ -24,10 +24,10 @@ import time
 
 import numpy as np
 import torch
-import torch.nn as nn
 from torch.nn import functional as F
 
 from tokbench.tok_suite import TOKENS_DIR, get_tokenizer
+from zero_to_hero.gpt.model import GPT, GPTConfig
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RUNS_DIR = os.path.join(ROOT, "tokbench_out/runs")
@@ -42,58 +42,9 @@ N_LAYER = 6
 DROPOUT = 0.2
 
 
-class CausalSelfAttention(nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.qkv = nn.Linear(N_EMBD, 3 * N_EMBD, bias=False)  # == 6 heads x {key, query, value}
-        self.proj = nn.Linear(N_EMBD, N_EMBD)
-        self.dropout = nn.Dropout(DROPOUT)
-
-    def forward(self, x):
-        B, T, C = x.shape
-        q, k, v = self.qkv(x).split(C, dim=2)
-        q, k, v = (t.view(B, T, N_HEAD, C // N_HEAD).transpose(1, 2) for t in (q, k, v))
-        y = F.scaled_dot_product_attention(q, k, v, is_causal=True,
-                                           dropout_p=DROPOUT if self.training else 0.0)
-        y = y.transpose(1, 2).contiguous().view(B, T, C)
-        return self.dropout(self.proj(y))
-
-
-class Block(nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.sa = CausalSelfAttention()
-        self.ffwd = nn.Sequential(nn.Linear(N_EMBD, 4 * N_EMBD), nn.ReLU(),
-                                  nn.Linear(4 * N_EMBD, N_EMBD), nn.Dropout(DROPOUT))
-        self.ln1 = nn.LayerNorm(N_EMBD)
-        self.ln2 = nn.LayerNorm(N_EMBD)
-
-    def forward(self, x):
-        x = x + self.sa(self.ln1(x))
-        return x + self.ffwd(self.ln2(x))
-
-
-class GPT(nn.Module):
-    def __init__(self, vocab_size):
-        super().__init__()
-        self.token_embedding_table = nn.Embedding(vocab_size, N_EMBD)
-        self.position_embedding_table = nn.Embedding(BLOCK_SIZE, N_EMBD)
-        self.blocks = nn.Sequential(*[Block() for _ in range(N_LAYER)])
-        self.ln_f = nn.LayerNorm(N_EMBD)
-        self.lm_head = nn.Linear(N_EMBD, vocab_size)
-        self.apply(self._init_weights)
-
-    def _init_weights(self, module):
-        if isinstance(module, (nn.Linear, nn.Embedding)):
-            torch.nn.init.normal_(module.weight, mean=0.0, std=0.02)
-            if getattr(module, "bias", None) is not None:
-                torch.nn.init.zeros_(module.bias)
-
-    def forward(self, idx):
-        T = idx.shape[1]
-        x = self.token_embedding_table(idx) + self.position_embedding_table(
-            torch.arange(T, device=idx.device))
-        return self.lm_head(self.ln_f(self.blocks(x)))
+def model_config(vocab_size):
+    return GPTConfig(vocab_size=vocab_size, block_size=BLOCK_SIZE, n_embd=N_EMBD, n_head=N_HEAD,
+                     n_layer=N_LAYER, dropout=DROPOUT, attn="batched")
 
 
 def flops_per_token(vocab_size):
@@ -126,7 +77,7 @@ def eval_bpb(model, data, token_nbytes, stride=BLOCK_SIZE // 2, batch=256):
         win = data[s[:, None] + torch.arange(T + 1, device=data.device)]
         x, y = win[:, :-1], win[:, 1:]
         with torch.autocast("cuda", dtype=torch.bfloat16):
-            logits = model(x)
+            logits, _ = model(x)
         loss = F.cross_entropy(logits.float().reshape(-1, logits.size(-1)), y.reshape(-1),
                                reduction="none").view(y.shape)
         keep = (s[:, None] + 1 + ar) > pe[:, None]
@@ -156,7 +107,7 @@ def train(corpus, tok, budget_pflops, seed, n_evals=25, device="cuda", out_dir=R
     train_slice = train_data[: int(torch.searchsorted(cum, val_bytes)) + 1]
     train_bytes_total = int(cum[-1])
 
-    model = GPT(V).to(device)
+    model = GPT(model_config(V)).to(device)
     n_params = sum(p.numel() for p in model.parameters())
     opt = torch.optim.AdamW(model.parameters(), lr=LR)
     fpt = flops_per_token(V)
@@ -179,7 +130,7 @@ def train(corpus, tok, budget_pflops, seed, n_evals=25, device="cuda", out_dir=R
         while step < target:
             x, y = get_batch()
             with torch.autocast("cuda", dtype=torch.bfloat16):
-                logits = model(x)
+                logits, _ = model(x)
             loss = F.cross_entropy(logits.float().view(-1, V), y.reshape(-1))
             opt.zero_grad(set_to_none=True)
             loss.backward()
@@ -210,7 +161,7 @@ def train(corpus, tok, budget_pflops, seed, n_evals=25, device="cuda", out_dir=R
     with torch.no_grad():
         for _ in range(200):
             with torch.autocast("cuda", dtype=torch.bfloat16):
-                logits = model(idx[:, -BLOCK_SIZE:])[:, -1].float()
+                logits = model(idx[:, -BLOCK_SIZE:])[0][:, -1].float()
             idx = torch.cat([idx, torch.multinomial(F.softmax(logits, -1), 1)], 1)
     sample = tokenizer.decode(idx[0].tolist())
 

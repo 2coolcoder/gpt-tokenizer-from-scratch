@@ -1,0 +1,21 @@
+{
+ "wavenet_22k": {
+  "n_params": 22397,
+  "block_size": 8,
+  "train": 1.9110122919082642,
+  "dev": 2.0201926231384277,
+  "test": 2.0188708305358887,
+  "samples": [
+   "celberlee",
+   "kuraila",
+   "kayden",
+   "maisiana",
+   "nolla",
+   "kaman",
+   "arromina",
+   "braxson",
+   "mariell",
+   "jenatio"
+  ]
+ }
+}

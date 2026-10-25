@@ -1,0 +1,68 @@
+{
+ "corpus": "taylorswift.txt",
+ "bytes": 185768,
+ "vocab_size": 512,
+ "tokenizers": {
+  "basic": {
+   "train_time_s": 6.171009513083845,
+   "tokens": 78746,
+   "bytes_per_token": 2.3590785563711174,
+   "first_merges": [
+    "e ",
+    ", ",
+    "d ",
+    ". ",
+    "r ",
+    "20",
+    "s ",
+    "in",
+    "on",
+    "ri",
+    "t ",
+    "th"
+   ]
+  },
+  "regex_minbpe_trainer": {
+   "train_time_s": 13.090073914965615,
+   "tokens": 87339,
+   "bytes_per_token": 2.126976493891618,
+   "first_merges": [
+    "er",
+    "20",
+    "or",
+    "in",
+    "ed",
+    " t",
+    "on",
+    "he",
+    " S",
+    "ar",
+    "an",
+    " A"
+   ]
+  },
+  "regex_fast_trainer": {
+   "train_time_s": 0.1634569929447025,
+   "tokens": 87339,
+   "bytes_per_token": 2.126976493891618,
+   "first_merges": [
+    "er",
+    "20",
+    "or",
+    "in",
+    "ed",
+    " t",
+    "on",
+    "he",
+    " S",
+    "ar",
+    "an",
+    " A"
+   ]
+  },
+  "gpt4_cl100k_reproduced": {
+   "tokens": 49298,
+   "bytes_per_token": 3.7682664611140413
+  }
+ }
+}

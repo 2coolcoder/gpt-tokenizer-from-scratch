@@ -4,12 +4,16 @@ __pycache__/
 .pytest_cache/
 .ipynb_checkpoints/
 
-# Course repo: zip + extracted copy (large; includes 50 MB+ model checkpoints)
+# Downloaded course repo: zip + extracted copy (reference only; not used by the code)
 *.zip
 repo/
 
 # Personal notes
 plan.txt
+
+# Lecture outputs: model checkpoints (43 MB) and console logs; the JSON results are kept
+results/lectures/*.pt
+results/lectures/*.log
 
 # Regenerable outputs (python -m tokbench.data / tok_suite / run_all)
 tokbench_out/data/

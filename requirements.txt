@@ -1,0 +1,6 @@
+torch>=2.2
+numpy
+regex
+matplotlib
+pytest
+tiktoken  # optional: GPT-4 tokenizer reproduction and compression reference rows

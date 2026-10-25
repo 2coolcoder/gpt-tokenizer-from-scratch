@@ -1,0 +1,21 @@
+{
+ "mlp_ctx3": {
+  "n_params": 12097,
+  "block_size": 3,
+  "train": 2.0583250522613525,
+  "dev": 2.1065289974212646,
+  "test": 2.104623556137085,
+  "samples": [
+   "cer",
+   "maleah",
+   "makima",
+   "kayden",
+   "maima",
+   "tainella",
+   "kaman",
+   "a",
+   "samiyah",
+   "javer"
+  ]
+ }
+}
